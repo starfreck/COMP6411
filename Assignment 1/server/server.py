@@ -1,4 +1,5 @@
 import pathlib
+import json
 import socketserver
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
@@ -12,66 +13,87 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             
 
     def handle(self):
-
-        # Check if file is exist or not 
-        if not pathlib.Path('data.txt').exists():
-            self.database_file = open("data.txt","w+")
-        else:
-            self.database_file = open("data.txt","r")
-        # reading file and loading into the memory
-        self.memory_db = {}
-        for line in self.database_file:
-            print(line.strip().split('|'))
-       
-
         # self.request is the TCP socket connected to the client
         self.data = self.request.recv(1024).strip()
-        #print("{} wrote:".format(self.client_address[0]))
-        #print(self.data)
-        try:
-            self.menu(int(self.data))
-        except:
-            self.request.sendall(self.str_to_byte("Only \"Integer\" values are accepted"))
+        
+        #pass to the menu
+        self.menu(str(self.data,'utf-8'))
+
 
 
     def menu(self,argument):
-        switcher = {
-            1: "find_customer",
-            2: "add_customer",
-            3: "delete_customer",
-            4: "update_customer_age",
-            5: "update_customer_address",
-            6: "update_customer_phone",
-            7: "print_report",
-            8: "exit"
-        }
-        # Get the function from switcher dictionary
-        default = self.request.sendall(self.str_to_byte("Please, select valid option..."))
-        return getattr(self,switcher[argument],lambda: default)()
+        print("\n"+argument+"\n")
+        if argument == "find_customer" :
+            self.find_customer()
+        elif argument == "add_customer" :
+            self.add_customer()
+        elif argument == "delete_customer" :
+            self.delete_customer()
+        elif argument == "update_customer_age" :
+            self.update_customer_age()
+        elif argument == "update_customer_address" :
+            self.update_customer_address()
+        elif argument == "update_customer_phone" :
+            self.update_customer_phone()
+        elif argument == "print_report" :
+            self.print_report()
+        elif argument == "exit" :
+            self.exit()
 
     # 1. Find customer
     def find_customer(self):
-        print("Find customer")
-        # just send back the data
-        self.request.sendall(self.str_to_byte("Find customer"))
-
+        # Get customer name from client
+        customer_name = str(self.request.recv(1024).strip(), "utf-8")
+        # find custmer into database
+        result = memory_db.get(customer_name, "Customer not found")
+        if type(result) == dict:
+            result = json.dumps(result)
+        # Send back result to client
+        self.request.sendall(self.str_to_byte(result))
+    
     # 2. Add customer
     def add_customer(self):
-        print("Add customer")
+        # Get new customer's details from client
+        new_customer = str(self.request.recv(1024).strip(), "utf-8")
+        new_customer = json.loads(new_customer)
+        # find custmer into database
+        result = memory_db.get(new_customer['name'])
         # just send back the data
-        self.request.sendall(self.str_to_byte("Add customer"))
+        if result is None:
+            # Add customer
+            memory_db[new_customer['name']] = new_customer
+            self.request.sendall(self.str_to_byte("Customer has been added"))
+        else:
+            # Customer name already exist
+            self.request.sendall(self.str_to_byte("Customer already exists"))
+            
 
     # 3. Delete customer
     def delete_customer(self):
-        print("Delete customer")
-        # just send back the data
-        self.request.sendall(self.str_to_byte("Delete customer"))
+        # Get customer name from client
+        customer_name = str(self.request.recv(1024).strip(), "utf-8")
+        # find custmer into database
+        result = memory_db.get(customer_name, "Customer does not exist")
+        if type(result) == dict:
+            # Delete customer
+            del memory_db[customer_name] 
+            # Send back result to client
+            self.request.sendall(self.str_to_byte("Customer has been deleted"))
     
     # 4. Update customer age
     def update_customer_age(self):
-        print("Update customer age")
+        # Get customer's name and age from client
+        customer_details = str(self.request.recv(1024).strip(), "utf-8")
+        customer_details = json.loads(customer_details)
+        # find custmer into database
+        result = memory_db.get(customer_details['name'], "Customer not found")
         # just send back the data
-        self.request.sendall(self.str_to_byte("Update customer age"))
+        if type(result) == dict:
+            # Update customer's age
+            memory_db[customer_details['name']]['age'] = customer_details['age']
+            self.request.sendall(self.str_to_byte("Customer's age has been updated"))
+            
+
 
     # 5. Update customer address
     def update_customer_address(self):
@@ -87,15 +109,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
     # 7. Print report
     def print_report(self):
-        print("Print report")
         # just send back the data
-        self.request.sendall(self.str_to_byte("Print report"))
+        self.request.sendall(self.str_to_byte(json.dumps(memory_db)))
 
-    # 8. Exit
-    def exit(self):
-        print("Exit")
-        # just send back the data
-        self.request.sendall(self.str_to_byte("Exit Server"))
 
     def str_to_byte(self,string):
         return bytes(string + "\n", "utf-8")
@@ -104,6 +120,25 @@ if __name__ == "__main__":
 
     HOST, PORT = "localhost", 9999
 
+    # Check if file is exist or not 
+    if not pathlib.Path('data.txt').exists():
+        database_file = open("data.txt","w+")
+    else:
+        database_file = open("data.txt","r")
+    
+    # reading file and loading into the memory
+    memory_db = {}
+
+    for line in database_file:
+        user = line.strip().split('|')
+        if not user[0] == '':
+            user_db ={}
+            user_db['name'] = user[0]
+            user_db['age'] = user[1]
+            user_db['address'] = user[2]
+            user_db['phone'] = user[3]
+            memory_db[user[0]] =  user_db
+        
     # Create the server, binding to localhost on port 9999
     with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
         # Activate the server; this will keep running until you
