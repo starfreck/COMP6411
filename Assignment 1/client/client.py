@@ -1,10 +1,12 @@
 import sys
 import json
 import socket
+from collections import OrderedDict
 
 HOST, PORT = "localhost", 9999
 
 
+# Menu for Client
 def menu():
     print("""Python DB Menu
 
@@ -104,15 +106,47 @@ def update_customer_age(sock):
 
 # 5. Update customer address
 def update_customer_address(sock):
-    print("Update customer address")
-    # just send back the data
-    sock.sendall(str_to_byte("Update customer address"))
+    #Get customer name
+    customer_name = input("Enter customer's name :")
+    if not customer_name:
+        print("\nError >>> {}".format("Customer's name cannot be empty\n"))
+        return
+    #Get new address of customer
+    customer_address = input("Enter new address for {}:".format(customer_name))
+    if not customer_address:
+        print("\nError >>> {}".format("Customer's age cannot be empty\n"))
+        return
+
+    # send action to server
+    sock.sendall(str_to_byte("update_customer_address"))
+    # send customer_name and customer_age to server
+    sock.sendall(str_to_byte(json.dumps({"name":customer_name,"address":customer_address})))
+    # Receive data from the server and shut down
+    received = str(sock.recv(1024), "utf-8")
+    print()
+    print("Server Response >>> {}".format(received))
 
 # 6. Update customer phone
 def update_customer_phone(sock):
-    print("Update customer phone")
-    # just send back the data
-    sock.sendall(str_to_byte("Update customer phone"))
+    #Get customer name
+    customer_name = input("Enter customer's name :")
+    if not customer_name:
+        print("\nError >>> {}".format("Customer's name cannot be empty\n"))
+        return
+    #Get new phone of customer
+    customer_phone = input("Enter new address for {}:".format(customer_name))
+    if not customer_phone:
+        print("\nError >>> {}".format("Customer's phone cannot be empty\n"))
+        return
+
+    # send action to server
+    sock.sendall(str_to_byte("update_customer_phone"))
+    # send customer_name and customer_age to server
+    sock.sendall(str_to_byte(json.dumps({"name":customer_name,"phone":customer_phone})))
+    # Receive data from the server and shut down
+    received = str(sock.recv(1024), "utf-8")
+    print()
+    print("Server Response >>> {}".format(received))
 
 # 7. Print report
 def print_report(sock):
@@ -120,35 +154,26 @@ def print_report(sock):
     sock.sendall(str_to_byte("print_report"))
 
     # Receive data from the server and shut down
-    received = str(sock.recv(1024), "utf-8")
+    received = str(sock.recv(10485760), "utf-8")
 
-    customers = json.load(received)
+    customers = json.loads(received)
     
-    print ("{:<8} {:<15} {:<10} {:<10}".format('Name','Age','Address','Phone'))
-    for customer in customers.items():
-        print("{:<8} {:<15} {:<10} {:<10}".format(customer['name'],customer['age'],customer['address'],customer['phone']))
+    print ("{:<10} {:<10} {:<20} {:<25}".format('Name','Age','Address','Phone'))
+    for customer in customers.values():
+        print("{:<10} {:<10} {:<20} {:<25}".format(customer['name'],customer['age'],customer['address'],customer['phone']))
+    print()
 
-# 8. Exit
-def exit(sock):
-    print("Exit")
-    # just send back the data
-    sock.sendall(str_to_byte("Exit Server"))
-
+# Conver String to Bytes
 def str_to_byte(string):
     return bytes(string + "\n", "utf-8")
 
+# Check if given value is Integer
 def is_int(val):
     try:
         num = int(val)
     except ValueError:
         return False
     return True
-
-# Menu for Client
-
-
-
-
 
 
 if __name__ == "__main__":
@@ -179,19 +204,12 @@ if __name__ == "__main__":
                 elif choice == 7 :
                     print_report(sock)
                 elif choice == 8 :
-                    exit(sock)
+                    print("Good bye")
+                    break
+                    exit(0)
                 else:
                     print("Please, select valid option...")
-            except:
+            except ValueError:
                 print("Only \"Integer\" values are accepted")
-
-           
-
-
-
-           
-            # Receive data from the server and shut down
-            #received = str(sock.recv(1024), "utf-8")
-        #print()
-        # print("Sent:     {}".format(data))
-        #print("Server Response >>> {}".format(received))
+            except Exception as e:
+                print(e)

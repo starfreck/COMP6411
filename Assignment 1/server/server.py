@@ -14,15 +14,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1024).strip()
-        
+        self.data = self.request.recv(1024).strip()        
         #pass to the menu
         self.menu(str(self.data,'utf-8'))
 
-
-
     def menu(self,argument):
-        print("\n"+argument+"\n")
         if argument == "find_customer" :
             self.find_customer()
         elif argument == "add_customer" :
@@ -70,47 +66,75 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
     # 3. Delete customer
     def delete_customer(self):
-        # Get customer name from client
-        customer_name = str(self.request.recv(1024).strip(), "utf-8")
-        # find custmer into database
-        result = memory_db.get(customer_name, "Customer does not exist")
-        if type(result) == dict:
-            # Delete customer
-            del memory_db[customer_name] 
-            # Send back result to client
-            self.request.sendall(self.str_to_byte("Customer has been deleted"))
+        try:
+            # Get customer name from client
+            customer_name = str(self.request.recv(1024).strip(), "utf-8")
+            # find custmer into database
+            result = memory_db.get(customer_name, "Customer does not exist")
+            if type(result) == dict:
+                # Delete customer
+                del memory_db[customer_name] 
+                # Send back result to client
+                self.request.sendall(self.str_to_byte("Customer has been deleted"))
+            else:
+                self.request.sendall(self.str_to_byte(result))
+        except e:
+            Print(e)
     
     # 4. Update customer age
     def update_customer_age(self):
         # Get customer's name and age from client
         customer_details = str(self.request.recv(1024).strip(), "utf-8")
-        customer_details = json.loads(customer_details)
+        customer_info = json.loads(customer_details)
         # find custmer into database
-        result = memory_db.get(customer_details['name'], "Customer not found")
+        result = memory_db.get(customer_info['name'], "Customer not found")
         # just send back the data
         if type(result) == dict:
             # Update customer's age
-            memory_db[customer_details['name']]['age'] = customer_details['age']
+            memory_db[customer_info['name']]['age'] = customer_info['age']
             self.request.sendall(self.str_to_byte("Customer's age has been updated"))
+        else:
+            self.request.sendall(self.str_to_byte(result))
             
 
 
     # 5. Update customer address
     def update_customer_address(self):
-        print("Update customer address")
+        # Get customer's name and age from client
+        customer_details = str(self.request.recv(1024).strip(), "utf-8")
+        customer_info = json.loads(customer_details)
+        # find custmer into database
+        result = memory_db.get(customer_info['name'], "Customer not found")
         # just send back the data
-        self.request.sendall(self.str_to_byte("Update customer address"))
+        if type(result) == dict:
+            # Update customer's address
+            memory_db[customer_info['name']]['address'] = customer_info['address']
+            self.request.sendall(self.str_to_byte("Customer's address has been updated"))
+        else:
+            self.request.sendall(self.str_to_byte(result))
 
     # 6. Update customer phone
     def update_customer_phone(self):
-        print("Update customer phone")
+        # Get customer's name and age from client
+        customer_details = str(self.request.recv(1024).strip(), "utf-8")
+        customer_info = json.loads(customer_details)
+        # find custmer into database
+        result = memory_db.get(customer_info['name'], "Customer not found")
         # just send back the data
-        self.request.sendall(self.str_to_byte("Update customer phone"))
+        if type(result) == dict:
+            # Update customer's age
+            memory_db[customer_info['name']]['phone'] = customer_info['phone']
+            self.request.sendall(self.str_to_byte("Customer's phone has been updated"))
+        else:
+            self.request.sendall(self.str_to_byte(result))
 
     # 7. Print report
     def print_report(self):
+        #Sort
+        sorted_db = {k: memory_db[k] for k in sorted(memory_db)}
         # just send back the data
-        self.request.sendall(self.str_to_byte(json.dumps(memory_db)))
+        customers = json.dumps(sorted_db)
+        self.request.sendall(self.str_to_byte(customers))
 
 
     def str_to_byte(self,string):
@@ -133,10 +157,10 @@ if __name__ == "__main__":
         user = line.strip().split('|')
         if not user[0] == '':
             user_db ={}
-            user_db['name'] = user[0]
-            user_db['age'] = user[1]
-            user_db['address'] = user[2]
-            user_db['phone'] = user[3]
+            user_db['name'] = user[0].strip()
+            user_db['age'] = user[1].strip()
+            user_db['address'] = user[2].strip()
+            user_db['phone'] = user[3].strip()
             memory_db[user[0]] =  user_db
         
     # Create the server, binding to localhost on port 9999
