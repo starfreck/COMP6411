@@ -125,7 +125,7 @@ def update_customer_phone(sock):
         print_error("Customer's name cannot be empty and/or Integer")
         return
     # Get new phone of customer
-    customer_phone = input("Enter new address for {}:".format(customer_name)).strip()
+    customer_phone = input("Enter new phone for {}:".format(customer_name)).strip()
     # Validate customer_phone
     if not customer_phone:
         print_error("Customer's phone cannot be empty")
@@ -206,7 +206,6 @@ if __name__ == "__main__":
                     elif choice == 8 :
                         print("\nGood bye")
                         break
-                        exit(0)
                     else:
                         print_error("Please, select valid option")
                 except ValueError:

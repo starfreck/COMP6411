@@ -9,14 +9,15 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(MAX_SIZE).strip()        
+        self.data = self.request.recv(MAX_SIZE).strip()
+        str_data  = str(self.data,'utf-8')        
         #pass to the menu
-        self.menu(str(self.data,'utf-8'))
-
+        
+        if not str_data in (None, ''):
+            self.menu(str_data)
+            
     # Menu action controller
-    def menu(self,argument):
-        print("Args:"+argument)
-
+    def menu(self,argument):    
         if argument == "find_customer" :
             self.find_customer()
         elif argument == "add_customer" :
