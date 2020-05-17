@@ -12,31 +12,31 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         self.data = self.request.recv(MAX_SIZE).strip()
         str_data  = str(self.data,'utf-8')        
         #pass to the menu
-        
+        request_data = json.loads(str_data)
         if not str_data in (None, ''):
-            self.menu(str_data)
+            self.menu(request_data)
             
     # Menu action controller
     def menu(self,argument):    
-        if argument == "find_customer" :
-            self.find_customer()
-        elif argument == "add_customer" :
-            self.add_customer()
-        elif argument == "delete_customer" :
-            self.delete_customer()
-        elif argument == "update_customer_age" :
-            self.update_customer_age()
-        elif argument == "update_customer_address" :
-            self.update_customer_address()
-        elif argument == "update_customer_phone" :
-            self.update_customer_phone()
-        elif argument == "print_report" :
+        if argument['action'] == "find_customer" :
+            self.find_customer(argument)
+        elif argument['action'] == "add_customer" :
+            self.add_customer(argument)
+        elif argument['action'] == "delete_customer" :
+            self.delete_customer(argument)
+        elif argument['action'] == "update_customer_age" :
+            self.update_customer_age(argument)
+        elif argument['action'] == "update_customer_address" :
+            self.update_customer_address(argument)
+        elif argument['action'] == "update_customer_phone" :
+            self.update_customer_phone(argument)
+        elif argument['action'] == "print_report" :
             self.print_report()
 
     # 1. Find customer
-    def find_customer(self):
+    def find_customer(self,argument):
         # Get customer name from client
-        customer_name = str(self.request.recv(MAX_SIZE).strip(), "utf-8")
+        customer_name = argument['name']
         # Find custmer into database
         result = memory_db.get(customer_name)
         if result is None:
@@ -47,16 +47,15 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         return
             
     # 2. Add customer
-    def add_customer(self):
-        # Get new customer's details from client
-        new_customer = str(self.request.recv(MAX_SIZE).strip(), "utf-8")
-        new_customer = json.loads(new_customer)
+    def add_customer(self,argument):
+        
+        del argument['action']
         # Find custmer into database
-        result = memory_db.get(new_customer['name'])
+        result = memory_db.get(argument['name'])
         
         if result is None:
             # Store customer into memory_db
-            memory_db[new_customer['name']] = new_customer
+            memory_db[argument['name']] = argument
             self.request.sendall(self.str_to_byte("Customer has been added"))
         else:
             # Customer name already exist
@@ -64,9 +63,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         return
 
     # 3. Delete customer
-    def delete_customer(self):
+    def delete_customer(self,argument):
         # Get customer name from client
-        customer_name = str(self.request.recv(MAX_SIZE).strip(), "utf-8")
+        customer_name = argument['name']
         # Find custmer into database
         result = memory_db.get(customer_name, "Customer does not exist")
         if type(result) == dict:
@@ -79,16 +78,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         return
 
     # 4. Update customer age
-    def update_customer_age(self):
-        # Get customer's name and age from client
-        customer_details = str(self.request.recv(MAX_SIZE).strip(), "utf-8")
-        customer_info = json.loads(customer_details)
+    def update_customer_age(self,argument):
+        
         # Find custmer into database
-        result = memory_db.get(customer_info['name'], "Customer not found")
+        result = memory_db.get(argument['name'], "Customer not found")
         
         if type(result) == dict:
             # Update customer's age
-            memory_db[customer_info['name']]['age'] = customer_info['age']
+            memory_db[argument['name']]['age'] = argument['age']
             self.request.sendall(self.str_to_byte("Customer's age has been updated"))
         else:
             self.request.sendall(self.str_to_byte(result))
@@ -96,32 +93,28 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
 
     # 5. Update customer address
-    def update_customer_address(self):
-        # Get customer's name and age from client
-        customer_details = str(self.request.recv(MAX_SIZE).strip(), "utf-8")
-        customer_info = json.loads(customer_details)
+    def update_customer_address(self,argument):
+    
         # Find custmer into database
-        result = memory_db.get(customer_info['name'], "Customer not found")
+        result = memory_db.get(argument['name'], "Customer not found")
         
         if type(result) == dict:
             # Update customer's address
-            memory_db[customer_info['name']]['address'] = customer_info['address']
+            memory_db[argument['name']]['address'] = argument['address']
             self.request.sendall(self.str_to_byte("Customer's address has been updated"))
         else:
             self.request.sendall(self.str_to_byte(result))
         return
 
     # 6. Update customer phone
-    def update_customer_phone(self):
-        # Get customer's name and age from client
-        customer_details = str(self.request.recv(MAX_SIZE).strip(), "utf-8")
-        customer_info = json.loads(customer_details)
+    def update_customer_phone(self,argument):
+
         # Find custmer into database
-        result = memory_db.get(customer_info['name'], "Customer not found")
+        result = memory_db.get(argument['name'], "Customer not found")
         
         if type(result) == dict:
             # Update customer's phone
-            memory_db[customer_info['name']]['phone'] = customer_info['phone']
+            memory_db[argument['name']]['phone'] = argument['phone']
             self.request.sendall(self.str_to_byte("Customer's phone has been updated"))
         else:
             self.request.sendall(self.str_to_byte(result))
