@@ -1,3 +1,7 @@
 John|43|123 Apple street|514 428-3452
 Katya| 26|49 Queen Mary Road|514 234-7654
 Ahmad|91|1888 Pepper Lane|
+Vasu|45|3800 Linton Av|+1 (514) 714-6049
+Mayank|75|Linton Av|2424557
+Nidhi|||
+Vic|||
