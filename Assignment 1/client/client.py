@@ -1,3 +1,8 @@
+# File : client.py
+# Author : Vasu Ratanpara
+# Student ID : 40135264
+# E-mail : vasu.ratanpara@mail.concordia.ca
+
 import re
 import sys
 import json

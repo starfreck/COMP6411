@@ -1,3 +1,8 @@
+# File : server.py
+# Author : Vasu Ratanpara
+# Student ID : 40135264
+# E-mail : vasu.ratanpara@mail.concordia.ca
+
 import pathlib
 import json
 import socketserver
@@ -187,13 +192,13 @@ if __name__ == "__main__":
 
     for line in database_file:
         user = line.strip().split('|')
-        if not user[0] == '':
+        if not user[0].replace(" ", "") == '' and (user[1].replace(" ", "").strip().isdigit() or user[1].replace(" ", "").strip().isspace() or user[1].replace(" ", "").strip() == ""):
             user_db ={}
-            user_db['name'] = user[0].strip()
-            user_db['age'] = user[1].strip()
+            user_db['name'] = user[0].replace(" ", "").strip()
+            user_db['age'] = user[1].replace(" ", "").strip()
             user_db['address'] = user[2].strip()
             user_db['phone'] = user[3].strip()
-            memory_db[user[0].lower()] =  user_db
+            memory_db[user[0].lower().replace(" ", "").strip()] =  user_db
         
     # Create the server, binding to localhost on port 9999
     with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
