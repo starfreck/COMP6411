@@ -1,14 +1,17 @@
 ; Sales Order Application
 
-; Cust HashMaps
-(def custNameMap (sorted-map ))
-(def custMap (sorted-map ))
-; Prod HashMaps
-(def prodNameMap (sorted-map ))
-(def prodMap (sorted-map ))
+;;; Variable declaration
 
+; Cust HashMaps
+(def custNameMap (sorted-map))
+(def custMap (sorted-map))
+; Prod HashMaps
+(def prodNameMap (sorted-map))
+(def prodMap (sorted-map))
 ; Sales HashMaps
-(def saleMap (sorted-map ))
+(def saleMap (sorted-map))
+
+;;; Util. functions declaration
 
 ; load fine and split with new line
 (defn loadFile [file] 
@@ -19,6 +22,42 @@
 (defn splitDataFromLine [line]
    (clojure.string/split line #"\|")
 )
+
+; Convert String to Float
+(defn stringToFloat [str]
+   (let [n (read-string str)]
+      (if (number? n) (float n) nil)
+   )
+)
+
+; Calculate net price
+(defn cartCalculator [cart]
+   (if (not (empty? cart))
+      (do
+         (def mapValue (val (first cart)))
+         (def pid (:pid mapValue))
+         (def icount (:icount mapValue))
+         (def pprice (:price ((keyword pid) prodMap)))
+         (def netPrice (* (stringToFloat icount) (stringToFloat pprice)))
+         (float (+ netPrice (cartCalculator (rest cart))))
+      )
+   ; return 0 if the cart is empty
+   0)
+)
+
+; Calculate sales for product
+(defn productCalculator [cart]
+   (if (not (empty? cart))
+      (do
+         (def mapValue (val (first cart)))
+         (def icount (:icount mapValue))
+         (+ (Integer/parseInt icount) (productCalculator (rest cart)))
+      )
+   ; return 0 if the cart is empty
+   0)
+)
+
+;;; Loading files into hasmaps
 
 ; crate hasmap from cust.txt
 (defn readCust [collection]
@@ -74,9 +113,12 @@
    )
 )
 
+;;; Pretty print functions for hashmaps
+
 ; print Cust
 (defn printCust [collection]
   (if (not (empty? collection))
+      ; then
       (do
          (def uid  (name (key (first collection))))
          (def user (val (first collection)))
@@ -84,12 +126,15 @@
          (println (clojure.string/trim (str uid \: [(get user :name) (get user :address)(get user :phone)])))
          (printCust (rest collection))
       )
+      ; else
+      (print "\n")
    )
 )
 
 ; print Prod
 (defn printProd [collection]
   (if (not (empty? collection))
+      ; then
       (do
          (def pid  (name (key (first collection))))
          (def prod (val (first collection)))
@@ -97,12 +142,15 @@
          (println (clojure.string/trim (str pid \: [(get prod :name) (get prod :price)])))
          (printProd (rest collection))
       )
+      ; else
+      (print "\n")
    )
 )
 
 ; print Sale
 (defn printSale [collection]
   (if (not (empty? collection))
+      ; then
       (do
          (def sid  (name (key (first collection))))
          (def sale (val (first collection)))
@@ -110,24 +158,52 @@
          (println (clojure.string/trim (str sid \: [(get custNameMap (keyword (get sale :cid))) (get prodNameMap (keyword (get sale :pid))) (get sale :icount)])))
          (printSale (rest collection))
       )
+      ; else
+      (print "\n")
    )
 )
 
-; Calculate Sales For Customer
+;; Addtional function
+
+; Calculate sales for customer
 (defn calculateSales []
    (do
       (println "Enter customer name: ")
       (def customerName (read-line))
-      (def user (filter #(= customerName (str (second %))) custNameMap))
-      (def ukey (keys user))
-      ; Do some Here
-      
-      ; 1: ["John Smith" "shoes" "3"]
-      ;(println (clojure.string/trim (str sid \: [(get custNameMap (keyword (get sale :cid))) (get prodNameMap (keyword (get sale :pid))) (get sale :icount)])))
+      (def user (vec (filter #(= customerName (str (second %))) custNameMap)))
+      (if (= (count user) 0)
+         (println "\nUser doesn't exist\n")
+         (do
+            (def uid (name (get (get user 0) 0)))
+            ; <salesID, custID, prodID, itemCount>
+            (def shoppingCart (vec (filter  #(= (:cid (second %)) uid) saleMap)))
+            (println "\n"customerName": $" (cartCalculator shoppingCart)"\n")
+         )
+      )
    )
 )
 
-; loading files
+; Calculate sales for product
+(defn calculateProductSales []
+   (do
+      (println "Enter product name: ")
+      (def productName (read-line))
+      (def product (vec (filter #(= productName (str (second %))) prodNameMap)))
+      (if (= (count product) 0)
+         (println "\nProduct doesn't exist\n")
+         (do
+            (def pid (name (get (get product 0) 0)))
+            ; <salesID, custID, prodID, itemCount>
+            (def productCounter (vec (filter  #(= (:pid (second %)) pid) saleMap)))
+            (println "\n"productName": " (productCalculator productCounter)"\n")
+         )
+      )
+   )
+)
+
+
+;;; loading files
+
 (readCust (loadFile "cust.txt"))
 (readProd (loadFile "prod.txt"))
 (readSale (loadFile "sales.txt"))
@@ -155,15 +231,16 @@
 
 ; 5. Total Count For Product
 (defn totalCountForProduct []
+   (calculateProductSales)
 )
 
 ; 6. Exit
 (defn exit []
-   (println "Good Bye")
+   (println "\nGood Bye\n")
    (System/exit 0)
 )
 
-;; This program displays Menu
+;; Displays Menu
 (defn Menu []
    (println "*** Sales Menu ***")
    (println "------------------")
@@ -178,7 +255,7 @@
    (try
       (def option (Integer/parseInt (read-line)))
    (catch NumberFormatException e (def option 0)))
-   
+   (print "\n")
    (cond
       (= option 1) (do
          (displayCustomerTable)
