@@ -1,53 +1,40 @@
 % master process
- 
 -module(exchange).
 -export([start/0,main/0]).
 
-
-
-
 start() -> 
-    % Reading file to Map
+    % Reading file
     {ok, List} = file:consult("calls.txt"),
     io:format("****Calls to be made ****~n"),
     printList(List),
     % Start New Thread For Master Process
     register(list_to_atom("main"),spawn(exchange, main, [])),
     % Sending each recoard line-by-line to Main 
-    lists:map(fun(Line) -> main ! {Line} end, List),
-    io:fwrite("\n").
+    lists:map(fun(Line) -> main ! {Line} end, List).
 
+% Print the List with recursion
 printList([]) ->
     io:fwrite("\n");
 
-printList([H|T]) ->	
-	{H1,T1} = H,
-	io:format("~p:~p~n",[H1,T1]),
-	printList(T).
+printList([Head|Tail]) ->	
+	{Name,ContactList} = Head,
+	io:format("~p:~p~n",[Name,ContactList]),
+	printList(Tail).
 
-killChildren(List) ->
-    lists:map(fun(X) -> {S,_} = X, S ! stop end, List),
-    timer:sleep(1).
-
+% Master Method
 main()->
 	receive
         
 		{Line} ->
-			{H1,T1} = Line,
-			register(H1,spawn(calling,child,[])),
-			H1 ! {H1,T1},
+			{Name,ContactList} = Line,
+			register(Name,spawn(calling,child,[])),
+			Name ! {Name,ContactList},
 			main();   
 
-		{H1,T1,Timestamp,I} ->
-			io:format("~p received ~p  from ~p [~p] ~n",[T1,I,H1,Timestamp]),
-			main();
-
-		{H1,T1,Timestamp,RepM,RepM} ->
-			io:format("~p received ~p from ~p [~p]~n",[H1,RepM,T1,Timestamp]),
+        {Name,Friend,Timestamp,Message} ->
+			io:format("~p received ~s  from ~p [~p] ~n",[Friend,Message,Name,Timestamp]),
 			main()
-
 	after
         10000 ->
-            io:format("~nMaster has received no replies for 10 seconds, ending...~n"),
-            exit(kill)
+            io:format("~nMaster has received no replies for 10 seconds, ending...~n")
 	end.
