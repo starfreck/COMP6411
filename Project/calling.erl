@@ -22,7 +22,7 @@ child() ->
 			% Swaping Friend and Name
 			main ! {Friend,Name,Timestamp,"reply message"},
 			child()
-		
+
 	after
 		5000 ->
 			{_,Name} = erlang:process_info(self(), registered_name),
