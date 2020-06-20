@@ -7,20 +7,19 @@ timestamp() ->
 
 child() ->
 	receive
-		{Name,ContactList} ->
-			lists:map(fun(Friend) -> Friend ! {Name,Friend,timestamp(),"intro message"} end, ContactList),
+		{Sender,{Name,ContactList}} ->
+			lists:map(fun(Friend) -> Friend ! {Sender,{Friend,Name,timestamp(),"intro message"}} end, ContactList),
 			child();
 
-		{Name,Friend,Timestamp,Message} ->
+		{Sender,{Name,Friend,Timestamp,Message}} ->
 			timer:sleep(rand:uniform(100)),
-			main ! {Name,Friend,Timestamp,Message},
-			Friend ! {Name,Friend,Timestamp},
+			Sender ! {Name,Friend,Timestamp,Message},
+			Friend ! {Sender,{Friend,Name,Timestamp}},
 			child();
 
-		{Name,Friend,Timestamp} ->
+		{Sender,{Name,Friend,Timestamp}} ->
 			timer:sleep(rand:uniform(100)),
-			% Swaping Friend and Name
-			main ! {Friend,Name,Timestamp,"reply message"},
+			Sender ! {Name,Friend,Timestamp,"reply message"},
 			child()
 
 	after
